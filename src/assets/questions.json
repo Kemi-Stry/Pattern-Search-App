@@ -1,0 +1,32 @@
+[
+    {
+        "id": "1",
+        "name": "q1",
+        "title": "pytanie 1",
+        "answerA": "odp 1A",
+        "answerB": "odp 1B",
+        "answerC": "odp 1C",
+        "answerD": "odp 1D",
+        "correct": "a"
+    },
+    {
+        "id": "2",
+        "name": "q2",
+        "title": "pytanie 2",
+        "answerA": "odp 2A",
+        "answerB": "odp 2B",
+        "answerC": "odp 2C",
+        "answerD": "odp 2D",
+        "correct": "b"
+    },
+    {
+        "id": "3",
+        "name": "q3",
+        "title": "pytanie 3",
+        "answerA": "odp 3A",
+        "answerB": "odp 3B",
+        "answerC": "odp 3C",
+        "answerD": "odp 3D",
+        "correct": "c"
+    }
+]
