@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { naive, kmp, bm, rp } from "../modules/algorithms";
+import { stats, naive, kmp, bm, rk} from "../modules/algorithms/PaternSearch.ts";
 
 const PatterSearchPage = () => {
     const [text, setText] = useState<string>("");
@@ -10,22 +10,30 @@ const PatterSearchPage = () => {
 
     function handleAlgorithm(): void
     {
+        let stats: stats;
         switch (algorithm) {
             case "naive":
                 console.log("algorytm naiwny")
+                stats = naive(text, pattern)
+                setMaxSteps(stats.maxStep);
                 break;
             
             case "kmp":
-                const stats = kmp(text, pattern);
+                console.log("algorytm knutha-morrisa-pratta")
+                stats = kmp(text, pattern);
                 setMaxSteps(stats.maxStep);
                 break;
                
             case "bm":
                 console.log("algorytm boyera-moora")
+                stats = bm(text, pattern);
+                setMaxSteps(stats.maxStep);
                 break;
                 
             case "rk":
                 console.log("algorytm rabina-karpa")
+                stats = rk(text, pattern, 10, 16777213);
+                setMaxSteps(stats.maxStep);
                 break;    
         
             default:
