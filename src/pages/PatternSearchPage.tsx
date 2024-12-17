@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { stats, naive, kmp, bm, rk} from "../modules/algorithms/PaternSearch.ts";
 
 const PatterSearchPage = () => {
@@ -7,9 +7,21 @@ const PatterSearchPage = () => {
     const [algorithm, setAlgorithm] = useState<string>("naive");
     const [step, setStep] = useState<number>(1);
     const [maxSteps, setMaxSteps] = useState<number>(0);
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+
+    let x = 10;
 
     function handleAlgorithm(): void
     {
+        const canvas = canvasRef.current?.getContext("2d");
+        if (canvas)
+        {
+            canvas.clearRect(0, 0, 100, 100);
+            canvas.font = "24px Arial";
+            canvas.fillText(text, 10, 25);
+            canvas?.fillText(pattern, x, 50);
+        }
+        
         let stats: stats;
         switch (algorithm) {
             case "naive":
@@ -41,6 +53,14 @@ const PatterSearchPage = () => {
         }
     }
 
+    function handleStep()
+    {
+        const canvas = canvasRef.current?.getContext("2d");
+        x = x + 10;
+        canvas?.fillText(pattern, x, 50);
+        
+    }
+
     return (
         <div className="content">
             <h1>Wyszukiwanie wzorca w tekście</h1>
@@ -58,11 +78,10 @@ const PatterSearchPage = () => {
                 <input type="text" name="text2" id="text2" onChange={(e) => setPattern(e.target.value)} />
             </div>
 
-            <h1>{text}</h1>
-            <h1>{pattern}</h1>
+            <canvas ref={canvasRef} id="myCanvas" width="200" height="100"></canvas>
             <div className="flex">
                 <label htmlFor="steps">{"krok: "+step}</label>
-                <input type="range" id="steps" min="1" max={maxSteps} defaultValue={1} onChange={(e) => setStep(parseInt(e.target.value))}/>
+                <input type="range" id="steps" min="1" max={maxSteps} defaultValue={1} onChange={(e) => {setStep(parseInt(e.target.value)); handleStep()}}/>
             </div>
             <button onClick={handleAlgorithm}>Wykonaj algorytm</button>
         </div>
