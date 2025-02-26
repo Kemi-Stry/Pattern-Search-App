@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { stats, naive, kmp, bm, rk} from "../modules/algorithms/PaternSearch.ts";
+import * as d3 from "d3";
 
 const PatterSearchPage = () => {
     const [text, setText] = useState<string>("");
@@ -7,45 +8,119 @@ const PatterSearchPage = () => {
     const [algorithm, setAlgorithm] = useState<string>("naive");
     const [step, setStep] = useState<number>(1);
     const [maxSteps, setMaxSteps] = useState<number>(0);
-    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const svgRef = useRef<SVGSVGElement>(null)
 
-    let x = 10;
+    const shifts = useRef<number[]>([]);
+
+    useEffect(() => {
+        const svg = d3.select(svgRef.current);
+        svg.selectAll("*").remove();
+
+        //render text
+        svg.append("text")
+            .attr("id", "string")
+            .selectAll("tspan")
+            .data(text.split(""))
+            .enter()
+            .append("tspan")
+            .attr("x", (_d, i) => 20 * i + 20)
+            .attr("y", 50)
+            .text(d => d)
+            .attr("font-family", "Consolas")
+            .attr("font-size", "24px")
+
+        // render pattern
+        svg.append("text")
+            .attr("id", "pattern")
+            .selectAll("tspan")
+            .data(pattern.split(""))
+            .enter()
+            .append("tspan")
+            .attr("x", (_d, i) => 20 * i + 20)
+            .attr("y", 100)
+            .text(d => d)
+            .attr("font-family", "Consolas")
+            .attr("font-size", "24px")
+            
+    }, 
+    [text, pattern])
+
+    // Highlight pattern match
+    function highlightMatch(index: number): void
+    {
+        const svg = d3.select(svgRef.current);
+        const string = svg.select("#string").selectAll("tspan");
+        
+        let i = 0;
+        while(i < pattern.length)
+        {
+            string.filter((_d, a) => a == index+i).attr("fill", "green")
+            i++;
+        }
+    }
 
     function handleAlgorithm(): void
-    {
-        const canvas = canvasRef.current?.getContext("2d");
-        if (canvas)
-        {
-            canvas.clearRect(0, 0, 100, 100);
-            canvas.font = "24px Arial";
-            canvas.fillText(text, 10, 25);
-            canvas?.fillText(pattern, x, 50);
-        }
-        
+    {        
         let stats: stats;
         switch (algorithm) {
             case "naive":
                 console.log("algorytm naiwny")
                 stats = naive(text, pattern)
+                shifts.current = stats.shifts
+
+                console.log("przesunięcia: ", shifts.current);
+                console.log("dopasowanie: ",stats.indexes)
+
                 setMaxSteps(stats.maxStep);
+                for(const index of stats.indexes)
+                {
+                    highlightMatch(index);
+                }
                 break;
             
             case "kmp":
                 console.log("algorytm knutha-morrisa-pratta")
                 stats = kmp(text, pattern);
+                shifts.current = stats.shifts
+
+                console.log("przesunięcia: ", shifts.current);
+                console.log("dopasowanie: ",stats.indexes)
+
                 setMaxSteps(stats.maxStep);
+                for(const index of stats.indexes)
+                {
+                    highlightMatch(index);
+                }
                 break;
                
             case "bm":
                 console.log("algorytm boyera-moora")
                 stats = bm(text, pattern);
+                shifts.current = stats.shifts
+
+                console.log("przesunięcia: ", shifts.current);
+                console.log("dopasowanie: ",stats.indexes)
+
                 setMaxSteps(stats.maxStep);
+                for(const index of stats.indexes)
+                {
+                    highlightMatch(index);
+                }
                 break;
                 
             case "rk":
                 console.log("algorytm rabina-karpa")
                 stats = rk(text, pattern, 10, 16777213);
+                shifts.current = stats.shifts
+
+                console.log("przesunięcia: ", shifts.current);
+                console.log("dopasowanie: ",stats.indexes)
+
                 setMaxSteps(stats.maxStep);
+                for(const index of stats.indexes)
+                {
+                    highlightMatch(index);
+                }
                 break;    
         
             default:
@@ -53,12 +128,33 @@ const PatterSearchPage = () => {
         }
     }
 
-    function handleStep()
+    function shiftText(shift: number, right: boolean): void
     {
-        const canvas = canvasRef.current?.getContext("2d");
-        x = x + 10;
-        canvas?.fillText(pattern, x, 50);
-        
+        const svg = d3.select(svgRef.current);
+        svg.select("#pattern").selectAll("tspan").attr("x", function() {
+            if(right)
+                return parseInt(d3.select(this).attr("x")) + 20 * shift;
+            else
+                return parseInt(d3.select(this).attr("x")) - 20 * shift;
+        })
+    }
+
+    function nextStep(): void
+    {
+        if (step !== maxSteps)
+        {
+            setStep(step+1);
+            shiftText(shifts.current[step-1], true);
+        }
+    }
+
+    function previousStep(): void
+    {
+        if (step !== 1)
+        {
+            setStep(step-1);
+            shiftText(shifts.current[step-1], false);
+        }
     }
 
     return (
@@ -77,11 +173,11 @@ const PatterSearchPage = () => {
                 <label htmlFor="text2">Szukany wzorzec:</label>
                 <input type="text" name="text2" id="text2" onChange={(e) => setPattern(e.target.value)} />
             </div>
-
-            <canvas ref={canvasRef} id="myCanvas" width="200" height="100"></canvas>
+            <svg ref={svgRef}></svg>
             <div className="flex">
                 <label htmlFor="steps">{"krok: "+step}</label>
-                <input type="range" id="steps" min="1" max={maxSteps} defaultValue={1} onChange={(e) => {setStep(parseInt(e.target.value)); handleStep()}}/>
+                <button onClick={previousStep}>Poprzedni krok</button>
+                <button onClick={nextStep}>Następny krok</button>
             </div>
             <button onClick={handleAlgorithm}>Wykonaj algorytm</button>
         </div>
