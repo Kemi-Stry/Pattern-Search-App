@@ -5,13 +5,15 @@ body
   max-width: 1280px;
   margin: 0 auto;
   font-family: Poppins;
+  background-color: rgb(229, 229, 229);
 }
 
 .content
 {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: 90%;
+  margin: auto;
 }
 
 .flex
@@ -25,7 +27,7 @@ body
 .card
 {
     padding: 10px;
-    background-color: rgb(232, 232, 232);
+    background-color: rgb(243, 243, 243);
     border-radius: 10px;
     width: 50%;
     box-shadow: 8px 7px 20px -19px rgba(0, 0, 0, 1);
@@ -42,4 +44,5 @@ svg
 {
   width: 100%;
   border: 2px black solid;
+  background-color: white;
 }

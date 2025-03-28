@@ -1,0 +1,41 @@
+.centered
+{
+    text-align: center;
+}
+
+.vertical
+{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.horizontal
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.button
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 5px;
+    border: 2px solid black;
+}
+
+.button:hover
+{
+    cursor: pointer;
+    background-color: #e5e5e5;
+}
+
+.graph
+{
+    margin: 0;
+    font-size: 1.25rem;
+}

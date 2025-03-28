@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { stats, naive, kmp, bm, rk} from "../modules/algorithms/PaternSearch.ts";
 import * as d3 from "d3";
+import styles from "./styles/PatterSearch.module.css"
 
 const PatterSearchPage = () => {
     const [text, setText] = useState<string>("");
@@ -43,7 +44,7 @@ const PatterSearchPage = () => {
             .attr("font-size", "24px")
             
     }, 
-    [text, pattern])
+    [text, pattern, algorithm])
 
     // Highlight pattern match
     function highlightMatch(index: number): void
@@ -159,27 +160,30 @@ const PatterSearchPage = () => {
 
     return (
         <div className="content">
-            <h1>Wyszukiwanie wzorca w tekście</h1>
-            <div className="flex">
-                <label htmlFor="algorthm">algorytm:</label>
+            <div className={styles.vertical}>
+                <h1 className={styles.centered}>Wyszukiwanie wzorca w tekście</h1>
+            
+                <label htmlFor="algorthm">Algorytm:</label>
                 <select id="algorithm" onChange={(e) => setAlgorithm(e.target.value)}>
                     <option value="naive">Naiwny</option>
                     <option value="kmp">Knutha-Morrisa-Pratta</option>
                     <option value="bm">Boyera-Moore'a</option>
                     <option value="rk">Rabina-Karpa</option>
                 </select>
-                <label htmlFor="text1">Ciąg znaków:</label>
-                <input type="text" name="text1" id="text1" onChange={(e) => setText(e.target.value)}/>
-                <label htmlFor="text2">Szukany wzorzec:</label>
-                <input type="text" name="text2" id="text2" onChange={(e) => setPattern(e.target.value)} />
+                <div className={styles.horizontal}>
+                    <label htmlFor="text1">Ciąg znaków:</label>
+                    <input type="text" name="text1" id="text1" onChange={(e) => setText(e.target.value)}/>
+                    <label htmlFor="text2">Szukany wzorzec:</label>
+                    <input type="text" name="text2" id="text2" onChange={(e) => setPattern(e.target.value)} />
+                </div>
+                <svg ref={svgRef}></svg>
+                <label className={styles.centered} htmlFor="steps">{"krok: "+step}</label>
+                <div className="flex">
+                    <button className={styles.button} onClick={previousStep}><p className={styles.graph}>&lArr;</p> Poprzedni krok</button>
+                    <button className={styles.button} onClick={nextStep}>Następny krok <p className={styles.graph}>&rArr;</p></button>
+                </div>
+                <button onClick={handleAlgorithm}>Wykonaj algorytm</button>
             </div>
-            <svg ref={svgRef}></svg>
-            <div className="flex">
-                <label htmlFor="steps">{"krok: "+step}</label>
-                <button onClick={previousStep}>Poprzedni krok</button>
-                <button onClick={nextStep}>Następny krok</button>
-            </div>
-            <button onClick={handleAlgorithm}>Wykonaj algorytm</button>
         </div>
     );
 }
