@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { stats, naive, kmp, bm, rk} from "../modules/algorithms/PaternSearch.ts";
+import { stats, naive, kmp, bm, rk } from "../modules/algorithms/PaternSearch.ts";
 import * as d3 from "d3";
-import styles from "./styles/PatterSearch.module.css"
+import styles from "./styles/PatterSearch.module.css";
 
 const PatterSearchPage = () => {
     const [text, setText] = useState<string>("");
@@ -9,11 +9,14 @@ const PatterSearchPage = () => {
     const [algorithm, setAlgorithm] = useState<string>("naive");
     const [step, setStep] = useState<number>(1);
     const [maxSteps, setMaxSteps] = useState<number>(0);
-    const svgRef = useRef<SVGSVGElement>(null)
+    const svgRef = useRef<SVGSVGElement>(null);
 
     const shifts = useRef<number[]>([]);
+    const currentIndex = useRef<number>(0);
 
     useEffect(() => {
+        setStep(1);
+        currentIndex.current = 0
         const svg = d3.select(svgRef.current);
         svg.selectAll("*").remove();
 
@@ -27,7 +30,7 @@ const PatterSearchPage = () => {
             .attr("x", (_d, i) => 20 * i + 20)
             .attr("y", 50)
             .text(d => d)
-            .attr("font-family", "Consolas")
+            .attr("font-family", "monospace")
             .attr("font-size", "24px")
 
         // render pattern
@@ -40,9 +43,8 @@ const PatterSearchPage = () => {
             .attr("x", (_d, i) => 20 * i + 20)
             .attr("y", 100)
             .text(d => d)
-            .attr("font-family", "Consolas")
+            .attr("font-family", "monospace")
             .attr("font-size", "24px")
-            
     }, 
     [text, pattern, algorithm])
 
@@ -60,6 +62,7 @@ const PatterSearchPage = () => {
         }
     }
 
+    // Compute algoritms and stastics
     function handleAlgorithm(): void
     {        
         let stats: stats;
@@ -71,6 +74,7 @@ const PatterSearchPage = () => {
 
                 console.log("przesunięcia: ", shifts.current);
                 console.log("dopasowanie: ",stats.indexes)
+                console.log("porównań ", stats.comparisons)
 
                 setMaxSteps(stats.maxStep);
                 for(const index of stats.indexes)
@@ -115,7 +119,7 @@ const PatterSearchPage = () => {
                 shifts.current = stats.shifts
 
                 console.log("przesunięcia: ", shifts.current);
-                console.log("dopasowanie: ",stats.indexes)
+                console.log("dopasowanie: ",stats.indexes);
 
                 setMaxSteps(stats.maxStep);
                 for(const index of stats.indexes)
@@ -134,9 +138,21 @@ const PatterSearchPage = () => {
         const svg = d3.select(svgRef.current);
         svg.select("#pattern").selectAll("tspan").attr("x", function() {
             if(right)
-                return parseInt(d3.select(this).attr("x")) + 20 * shift;
+            {
+                let lenght = shift - currentIndex.current;
+                console.log("\nshift: ",shift);
+                console.log("index: ", currentIndex.current);
+                console.log("distance: ", lenght);
+                return parseInt(d3.select(this).attr("x")) + 20 * lenght; 
+            }
             else
-                return parseInt(d3.select(this).attr("x")) - 20 * shift;
+            {
+                let lenght = shift - currentIndex.current;
+                console.log("\nshift: ",shift);
+                console.log("index: ", currentIndex.current);
+                console.log("distance: ", lenght);
+                return parseInt(d3.select(this).attr("x")) + 20 * lenght;
+            }
         })
     }
 
@@ -146,6 +162,10 @@ const PatterSearchPage = () => {
         {
             setStep(step+1);
             shiftText(shifts.current[step-1], true);
+            currentIndex.current = shifts.current[step-1];
+
+            // console.log("INDEX: ",currentIndex);
+            // console.log("STEP: ",step);
         }
     }
 
@@ -154,7 +174,11 @@ const PatterSearchPage = () => {
         if (step !== 1)
         {
             setStep(step-1);
-            shiftText(shifts.current[step-1], false);
+            shiftText(shifts.current[step-2], false);  
+            currentIndex.current = shifts.current[step-2];
+
+            // console.log("INDEX: ",currentIndex);
+            // console.log("STEP: ",step);
         }
     }
 
@@ -162,7 +186,6 @@ const PatterSearchPage = () => {
         <div className="content">
             <div className={styles.vertical}>
                 <h1 className={styles.centered}>Wyszukiwanie wzorca w tekście</h1>
-            
                 <label htmlFor="algorthm">Algorytm:</label>
                 <select id="algorithm" onChange={(e) => setAlgorithm(e.target.value)}>
                     <option value="naive">Naiwny</option>
@@ -177,10 +200,10 @@ const PatterSearchPage = () => {
                     <input type="text" name="text2" id="text2" onChange={(e) => setPattern(e.target.value)} />
                 </div>
                 <svg ref={svgRef}></svg>
-                <label className={styles.centered} htmlFor="steps">{"krok: "+step}</label>
+                <label className={styles.centered} htmlFor="steps">{"Przesunięcie: "+step}</label>
                 <div className="flex">
-                    <button className={styles.button} onClick={previousStep}><p className={styles.graph}>&lArr;</p> Poprzedni krok</button>
-                    <button className={styles.button} onClick={nextStep}>Następny krok <p className={styles.graph}>&rArr;</p></button>
+                    <button className={styles.button} onClick={previousStep}><p className={styles.graph}>&lArr;</p> Poprzednie przesunięcie</button>
+                    <button className={styles.button} onClick={nextStep}>Następny przesunięcie<p className={styles.graph}>&rArr;</p></button>
                 </div>
                 <button onClick={handleAlgorithm}>Wykonaj algorytm</button>
             </div>

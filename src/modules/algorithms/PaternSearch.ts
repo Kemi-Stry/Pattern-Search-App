@@ -1,5 +1,6 @@
 export type stats = {
     maxStep: number    // liczba kroków \ przesunięć
+    comparisons: number // liczba porównań
     indexes: number[] // indeksy pierwszego znaku w którym jest dopasowanie
     shifts: number[] // przesunięcia (o ile przesunąć wzorzec w każdym kroku)
 }
@@ -8,22 +9,28 @@ export type stats = {
 export function naive(text: string, pattern:string): stats
 {
     let maxStep = 0;
+    let commparisons = 0;
     const indexes: number[] = [];
     const shifts: number[] = [];
     for (let i= 0; i <= text.length - pattern.length; i++)
     {
+
+        commparisons++;
         if(pattern === text.substring(i, i + pattern.length))
         {
             indexes.push(i);
+            commparisons += pattern.length - 1
         }
         maxStep++;
-        shifts.push(1);
+        shifts.push(maxStep);
     }
+    shifts.pop();
     return {
         maxStep: maxStep,
+        comparisons: commparisons,
         indexes: indexes,
         shifts: shifts
-    }
+    };
 }
 
 function computePrefix(pattern: string): number[]
@@ -42,7 +49,7 @@ function computePrefix(pattern: string): number[]
         }
         pi[prefix] = suffix;
     }
-    return pi
+    return pi;
 }
 
 // Algorytm Knutha-Morrisa-Pratta
@@ -59,7 +66,7 @@ export function kmp(text: string, pattern: string): stats
         while(matches>0 && pattern[matches] !== text[i])
         {
             matches = pi[matches-1];
-            console.log(matches)
+            console.log(matches);
             shifts.push(matches);
         }
         if(pattern[matches] === text[i])
@@ -99,13 +106,14 @@ export function rk(text: string, pattern: string, base: number, divisor: number)
     for (let shift=0; shift<=text.length-pattern.length; shift++)
     {
         maxStep++;
-        shifts.push(shift);
+        //shifts.push(shift+1);
 
         if(patternHash == textHash)
         {
             if(text.substring(shift, pattern.length+shift) == pattern)
             {
                 indexes.push(shift);
+                shifts.push(shift)
             }
         }
         if (shift < text.length - pattern.length)
@@ -153,7 +161,6 @@ export function bm(text: string, pattern: string): stats
     while (shift <= text.length - pattern.length)
     {
         maxStep++;
-        shifts.push(shift);
         let j = pattern.length - 1;
         while (j >= 0 && pattern[j] === text[shift + j])
         {
@@ -166,7 +173,8 @@ export function bm(text: string, pattern: string): stats
         }
         else
         {
-            shift += (j - (lastOccurrence.get(text[shift + j]) ?? -1) > 0) ? j - (lastOccurrence.get(text[shift + j]) ?? -1) : 1;
+            shift += (j - (lastOccurrence.get(text[shift + j]) ?? -1)) > 0 ? j - (lastOccurrence.get(text[shift + j]) ?? -1) : 1;
+            shifts.push(shift);
         }
         
     }
@@ -174,5 +182,5 @@ export function bm(text: string, pattern: string): stats
         maxStep: maxStep,
         indexes: indexes,
         shifts: shifts
-    }
+    };
 }
