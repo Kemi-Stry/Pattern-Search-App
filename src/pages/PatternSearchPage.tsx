@@ -1,214 +1,233 @@
 import { useState, useRef, useEffect } from "react";
-import { stats, naive, kmp, bm, rk } from "../modules/algorithms/PaternSearch.ts";
+import {
+	stats,
+	naive,
+	kmp,
+	bm,
+	rk,
+} from "../modules/algorithms/PaternSearch.ts";
 import * as d3 from "d3";
 import styles from "./styles/PatterSearch.module.css";
 
 const PatterSearchPage = () => {
-    const [text, setText] = useState<string>("");
-    const [pattern, setPattern] = useState<string>("");
-    const [algorithm, setAlgorithm] = useState<string>("naive");
-    const [step, setStep] = useState<number>(1);
-    const [maxSteps, setMaxSteps] = useState<number>(0);
-    const svgRef = useRef<SVGSVGElement>(null);
+	const [text, setText] = useState<string>("");
+	const [pattern, setPattern] = useState<string>("");
+	const [algorithm, setAlgorithm] = useState<string>("naive");
+	const [step, setStep] = useState<number>(0);
+	const [maxSteps, setMaxSteps] = useState<number>(0);
+	const [statistics, setStatistics] = useState<stats>();
 
-    const shifts = useRef<number[]>([]);
-    const currentIndex = useRef<number>(0);
+	const svgRef = useRef<SVGSVGElement>(null);
+	const shifts = useRef<number[]>([]);
+	const currentIndex = useRef<number>(0);
 
-    useEffect(() => {
-        setStep(1);
-        currentIndex.current = 0
-        const svg = d3.select(svgRef.current);
-        svg.selectAll("*").remove();
+	useEffect(() => {
+		setStep(0);
+		currentIndex.current = 0;
+		const svg = d3.select(svgRef.current);
+		svg.selectAll("*").remove();
 
-        //render text
-        svg.append("text")
-            .attr("id", "string")
-            .selectAll("tspan")
-            .data(text.split(""))
-            .enter()
-            .append("tspan")
-            .attr("x", (_d, i) => 20 * i + 20)
-            .attr("y", 50)
-            .text(d => d)
-            .attr("font-family", "monospace")
-            .attr("font-size", "24px")
+		// Render tekstu
+		svg
+			.append("text")
+			.attr("id", "string")
+			.selectAll("tspan")
+			.data(text.split(""))
+			.enter()
+			.append("tspan")
+			.attr("x", (_d, i) => 20 * i + 20)
+			.attr("y", 50)
+			.text((d) => d)
+			.attr("font-family", "monospace")
+			.attr("font-size", "24px");
 
-        // render pattern
-        svg.append("text")
-            .attr("id", "pattern")
-            .selectAll("tspan")
-            .data(pattern.split(""))
-            .enter()
-            .append("tspan")
-            .attr("x", (_d, i) => 20 * i + 20)
-            .attr("y", 100)
-            .text(d => d)
-            .attr("font-family", "monospace")
-            .attr("font-size", "24px")
-    }, 
-    [text, pattern, algorithm])
+		// Render wzorca
+		svg
+			.append("text")
+			.attr("id", "pattern")
+			.selectAll("tspan")
+			.data(pattern.split(""))
+			.enter()
+			.append("tspan")
+			.attr("x", (_d, i) => 20 * i + 20)
+			.attr("y", 100)
+			.text((d) => d)
+			.attr("font-family", "monospace")
+			.attr("font-size", "24px");
+	}, [text, pattern, algorithm]);
 
-    // Highlight pattern match
-    function highlightMatch(index: number): void
-    {
-        const svg = d3.select(svgRef.current);
-        const string = svg.select("#string").selectAll("tspan");
-        
-        let i = 0;
-        while(i < pattern.length)
-        {
-            string.filter((_d, a) => a == index+i).attr("fill", "green")
-            i++;
-        }
-    }
+	// Aktualizacja przesunięcia i kolorowania wzorca
+	useEffect(() => {
+		const svg = d3.select(svgRef.current);
+		let shiftValue = 0;
+		if (step > 0) {
+			// Dla kroku 1 pobieramy element o indeksie 0, dla kroku 2 indeks 1, itd.
+			shiftValue = shifts.current[step - 1] ?? 0;
+			svg
+				.select("#pattern")
+				.selectAll("tspan")
+				.transition()
+				.duration(500)
+				.attr("x", (_d, i) => 20 * i + 20 + 20 * shiftValue);
+			currentIndex.current = shiftValue;
+			console.log("Step:", step, "Index:", shiftValue);
+		} else {
+			// Początkowa pozycja wzorca
+			svg
+				.select("#pattern")
+				.selectAll("tspan")
+				.transition()
+				.duration(500)
+				.attr("x", (_d, i) => 20 * i + 20);
+		}
+		// Przekazujemy wartość przesunięcia bezpośrednio do funkcji kolorowania
+		colorPattern(shiftValue);
+	}, [step]);
 
-    // Compute algoritms and stastics
-    function handleAlgorithm(): void
-    {        
-        let stats: stats;
-        switch (algorithm) {
-            case "naive":
-                console.log("algorytm naiwny")
-                stats = naive(text, pattern)
-                shifts.current = stats.shifts
+	// Funkcja do oznaczania pasujących fragmentów tekstu
+	function highlightMatch(index: number): void {
+		const svg = d3.select(svgRef.current);
+		const string = svg.select("#string").selectAll("tspan");
 
-                console.log("przesunięcia: ", shifts.current);
-                console.log("dopasowanie: ",stats.indexes)
-                console.log("porównań ", stats.comparisons)
+		let i = 0;
+		while (i < pattern.length) {
+			string.filter((_d, a) => a === index + i).attr("fill", "green");
+			i++;
+		}
+	}
 
-                setMaxSteps(stats.maxStep);
-                for(const index of stats.indexes)
-                {
-                    highlightMatch(index);
-                }
-                break;
-            
-            case "kmp":
-                console.log("algorytm knutha-morrisa-pratta")
-                stats = kmp(text, pattern);
-                shifts.current = stats.shifts
+	function colorPattern(shift: number): void {
+		const svg = d3.select(svgRef.current);
+		const string = svg.select("#string").selectAll("tspan");
+		const patternTspans = svg.select("#pattern").selectAll("tspan");
 
-                console.log("przesunięcia: ", shifts.current);
-                console.log("dopasowanie: ",stats.indexes)
+		patternTspans.attr("fill", function (_d, i) {
+			const textChar = string.filter((_d, a) => a === shift + i).text() || "";
+			const patternChar = d3.select(this).text();
+			return textChar === patternChar ? "green" : "red";
+		});
 
-                setMaxSteps(stats.maxStep);
-                for(const index of stats.indexes)
-                {
-                    highlightMatch(index);
-                }
-                break;
-               
-            case "bm":
-                console.log("algorytm boyera-moora")
-                stats = bm(text, pattern);
-                shifts.current = stats.shifts
+		console.log(`colorPattern: shift=${shift}`);
+	}
 
-                console.log("przesunięcia: ", shifts.current);
-                console.log("dopasowanie: ",stats.indexes)
+	function handleAlgorithm(): void {
+		let statsResult: stats;
+		switch (algorithm) {
+			case "naive":
+				console.log("algorytm naiwny");
+				statsResult = naive(text, pattern);
+				shifts.current = statsResult.shifts;
+				setStatistics(statsResult);
+				console.log("przesunięcia: ", shifts.current);
+				console.log("dopasowanie: ", statsResult.indexes);
+				console.log("porównań ", statsResult.comparisons);
 
-                setMaxSteps(stats.maxStep);
-                for(const index of stats.indexes)
-                {
-                    highlightMatch(index);
-                }
-                break;
-                
-            case "rk":
-                console.log("algorytm rabina-karpa")
-                stats = rk(text, pattern, 10, 16777213);
-                shifts.current = stats.shifts
+				setMaxSteps(statsResult.maxStep);
+				for (const index of statsResult.indexes) {
+					highlightMatch(index);
+				}
+				// Inicjalne kolorowanie - wzorzec jeszcze nie został przesunięty
+				colorPattern(0);
+				break;
 
-                console.log("przesunięcia: ", shifts.current);
-                console.log("dopasowanie: ",stats.indexes);
+			case "kmp":
+				console.log("algorytm knutha-morrisa-pratta");
+				statsResult = kmp(text, pattern);
+				setStatistics(statsResult);
+				shifts.current = statsResult.shifts;
+				setMaxSteps(statsResult.maxStep);
+				for (const index of statsResult.indexes) {
+					highlightMatch(index);
+				}
+				colorPattern(0);
+				break;
 
-                setMaxSteps(stats.maxStep);
-                for(const index of stats.indexes)
-                {
-                    highlightMatch(index);
-                }
-                break;    
-        
-            default:
-                break;
-        }
-    }
+			case "bm":
+				console.log("algorytm boyera-moory");
+				statsResult = bm(text, pattern);
+				setStatistics(statsResult);
+				shifts.current = statsResult.shifts;
+				setMaxSteps(statsResult.maxStep);
+				for (const index of statsResult.indexes) {
+					highlightMatch(index);
+				}
+				colorPattern(0);
+				break;
 
-    function shiftText(shift: number, right: boolean): void
-    {
-        const svg = d3.select(svgRef.current);
-        svg.select("#pattern").selectAll("tspan").attr("x", function() {
-            if(right)
-            {
-                let lenght = shift - currentIndex.current;
-                console.log("\nshift: ",shift);
-                console.log("index: ", currentIndex.current);
-                console.log("distance: ", lenght);
-                return parseInt(d3.select(this).attr("x")) + 20 * lenght; 
-            }
-            else
-            {
-                let lenght = shift - currentIndex.current;
-                console.log("\nshift: ",shift);
-                console.log("index: ", currentIndex.current);
-                console.log("distance: ", lenght);
-                return parseInt(d3.select(this).attr("x")) + 20 * lenght;
-            }
-        })
-    }
+			case "rk":
+				console.log("algorytm rabina-karpa");
+				statsResult = rk(text, pattern, 10, 16777213);
+				setStatistics(statsResult);
+				shifts.current = statsResult.shifts;
+				setMaxSteps(statsResult.maxStep);
+				for (const index of statsResult.indexes) {
+					highlightMatch(index);
+				}
+				colorPattern(0);
+				break;
 
-    function nextStep(): void
-    {
-        if (step !== maxSteps)
-        {
-            setStep(step+1);
-            shiftText(shifts.current[step-1], true);
-            currentIndex.current = shifts.current[step-1];
+			default:
+				break;
+		}
+	}
 
-            // console.log("INDEX: ",currentIndex);
-            // console.log("STEP: ",step);
-        }
-    }
+	function nextStep(): void {
+		if (step < maxSteps - 1) setStep((prevStep) => prevStep + 1);
+	}
 
-    function previousStep(): void
-    {
-        if (step !== 1)
-        {
-            setStep(step-1);
-            shiftText(shifts.current[step-2], false);  
-            currentIndex.current = shifts.current[step-2];
+	function previousStep(): void {
+		if (step > 0) setStep((prevStep) => prevStep - 1);
+	}
 
-            // console.log("INDEX: ",currentIndex);
-            // console.log("STEP: ",step);
-        }
-    }
-
-    return (
-        <div className="content">
-            <div className={styles.vertical}>
-                <h1 className={styles.centered}>Wyszukiwanie wzorca w tekście</h1>
-                <label htmlFor="algorthm">Algorytm:</label>
-                <select id="algorithm" onChange={(e) => setAlgorithm(e.target.value)}>
-                    <option value="naive">Naiwny</option>
-                    <option value="kmp">Knutha-Morrisa-Pratta</option>
-                    <option value="bm">Boyera-Moore'a</option>
-                    <option value="rk">Rabina-Karpa</option>
-                </select>
-                <div className={styles.horizontal}>
-                    <label htmlFor="text1">Ciąg znaków:</label>
-                    <input type="text" name="text1" id="text1" onChange={(e) => setText(e.target.value)}/>
-                    <label htmlFor="text2">Szukany wzorzec:</label>
-                    <input type="text" name="text2" id="text2" onChange={(e) => setPattern(e.target.value)} />
-                </div>
-                <svg ref={svgRef}></svg>
-                <label className={styles.centered} htmlFor="steps">{"Przesunięcie: "+step}</label>
-                <div className="flex">
-                    <button className={styles.button} onClick={previousStep}><p className={styles.graph}>&lArr;</p> Poprzednie przesunięcie</button>
-                    <button className={styles.button} onClick={nextStep}>Następny przesunięcie<p className={styles.graph}>&rArr;</p></button>
-                </div>
-                <button onClick={handleAlgorithm}>Wykonaj algorytm</button>
-            </div>
-        </div>
-    );
-}
+	return (
+		<div className="content">
+			<div className={styles.vertical}>
+				<h1 className={styles.centered}>Wyszukiwanie wzorca w tekście</h1>
+				<label htmlFor="algorthm">Algorytm:</label>
+				<select id="algorithm" onChange={(e) => setAlgorithm(e.target.value)}>
+					<option value="naive">Naiwny</option>
+					<option value="kmp">Knutha-Morrisa-Pratta</option>
+					<option value="bm">Boyera-Moore'a</option>
+					<option value="rk">Rabina-Karpa</option>
+				</select>
+				<div className={styles.horizontal}>
+					<label htmlFor="text1">Ciąg znaków:</label>
+					<input
+						type="text"
+						name="text1"
+						id="text1"
+						onChange={(e) => setText(e.target.value)}
+					/>
+					<label htmlFor="text2">Szukany wzorzec:</label>
+					<input
+						type="text"
+						name="text2"
+						id="text2"
+						onChange={(e) => setPattern(e.target.value)}
+					/>
+				</div>
+				<svg ref={svgRef}></svg>
+				<label className={styles.centered} htmlFor="steps">
+					{"Przesunięcie: " + step}
+				</label>
+				<div className="flex">
+					<button className={styles.button} onClick={previousStep}>
+						<p className={styles.graph}>&lArr;</p> Poprzednie przesunięcie
+					</button>
+					<button className={styles.button} onClick={nextStep}>
+						Następne przesunięcie<p className={styles.graph}>&rArr;</p>
+					</button>
+				</div>
+				<button onClick={handleAlgorithm}>Wykonaj algorytm</button>
+			</div>
+			<div className="stats">
+				<p>{"Znaleziono wzorzec w indeksach: " + statistics?.indexes}</p>
+				<p>{"Liczba przesunięć: " + statistics?.maxStep}</p>
+				<p>{"Liczba porównań: " + statistics?.comparisons}</p>
+				{statistics?.lastoccurence && <p>{statistics.lastoccurence}</p>}
+			</div>
+		</div>
+	);
+};
 
 export default PatterSearchPage;
