@@ -1,11 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import {
-	stats,
-	naive,
-	kmp,
-	bm,
-	rk,
-} from "../modules/algorithms/PaternSearch.ts";
+import { stats, naive, kmp, bm, rk } from "../modules/algorithms/PaternSearch.ts";
 import * as d3 from "d3";
 import styles from "./styles/PatterSearch.module.css";
 
@@ -27,7 +21,7 @@ const PatterSearchPage = () => {
 		const svg = d3.select(svgRef.current);
 		svg.selectAll("*").remove();
 
-		// Render tekstu
+		// rysowanie tekstu
 		svg
 			.append("text")
 			.attr("id", "string")
@@ -37,11 +31,11 @@ const PatterSearchPage = () => {
 			.append("tspan")
 			.attr("x", (_d, i) => 20 * i + 20)
 			.attr("y", 50)
-			.text((d) => d)
+			.text(d => d)
 			.attr("font-family", "monospace")
 			.attr("font-size", "24px");
 
-		// Render wzorca
+		// Rysowanie wzorca
 		svg
 			.append("text")
 			.attr("id", "pattern")
@@ -51,7 +45,7 @@ const PatterSearchPage = () => {
 			.append("tspan")
 			.attr("x", (_d, i) => 20 * i + 20)
 			.attr("y", 100)
-			.text((d) => d)
+			.text(d => d)
 			.attr("font-family", "monospace")
 			.attr("font-size", "24px");
 	}, [text, pattern, algorithm]);
@@ -70,7 +64,6 @@ const PatterSearchPage = () => {
 				.duration(500)
 				.attr("x", (_d, i) => 20 * i + 20 + 20 * shiftValue);
 			currentIndex.current = shiftValue;
-			console.log("Step:", step, "Index:", shiftValue);
 		} else {
 			// Początkowa pozycja wzorca
 			svg
@@ -106,32 +99,23 @@ const PatterSearchPage = () => {
 			const patternChar = d3.select(this).text();
 			return textChar === patternChar ? "green" : "red";
 		});
-
-		console.log(`colorPattern: shift=${shift}`);
 	}
 
 	function handleAlgorithm(): void {
 		let statsResult: stats;
 		switch (algorithm) {
 			case "naive":
-				console.log("algorytm naiwny");
 				statsResult = naive(text, pattern);
 				shifts.current = statsResult.shifts;
 				setStatistics(statsResult);
-				console.log("przesunięcia: ", shifts.current);
-				console.log("dopasowanie: ", statsResult.indexes);
-				console.log("porównań ", statsResult.comparisons);
-
 				setMaxSteps(statsResult.maxStep);
 				for (const index of statsResult.indexes) {
 					highlightMatch(index);
 				}
-				// Inicjalne kolorowanie - wzorzec jeszcze nie został przesunięty
 				colorPattern(0);
 				break;
 
 			case "kmp":
-				console.log("algorytm knutha-morrisa-pratta");
 				statsResult = kmp(text, pattern);
 				setStatistics(statsResult);
 				shifts.current = statsResult.shifts;
@@ -143,7 +127,6 @@ const PatterSearchPage = () => {
 				break;
 
 			case "bm":
-				console.log("algorytm boyera-moory");
 				statsResult = bm(text, pattern);
 				setStatistics(statsResult);
 				shifts.current = statsResult.shifts;
@@ -155,7 +138,6 @@ const PatterSearchPage = () => {
 				break;
 
 			case "rk":
-				console.log("algorytm rabina-karpa");
 				statsResult = rk(text, pattern, 10, 16777213);
 				setStatistics(statsResult);
 				shifts.current = statsResult.shifts;
@@ -172,11 +154,11 @@ const PatterSearchPage = () => {
 	}
 
 	function nextStep(): void {
-		if (step < maxSteps - 1) setStep((prevStep) => prevStep + 1);
+		if (step < maxSteps - 1) setStep(prevStep => prevStep + 1);
 	}
 
 	function previousStep(): void {
-		if (step > 0) setStep((prevStep) => prevStep - 1);
+		if (step > 0) setStep(prevStep => prevStep - 1);
 	}
 
 	return (
@@ -184,7 +166,7 @@ const PatterSearchPage = () => {
 			<div className={styles.vertical}>
 				<h1 className={styles.centered}>Wyszukiwanie wzorca w tekście</h1>
 				<label htmlFor="algorthm">Algorytm:</label>
-				<select id="algorithm" onChange={(e) => setAlgorithm(e.target.value)}>
+				<select id="algorithm" onChange={e => setAlgorithm(e.target.value)}>
 					<option value="naive">Naiwny</option>
 					<option value="kmp">Knutha-Morrisa-Pratta</option>
 					<option value="bm">Boyera-Moore'a</option>
@@ -192,19 +174,9 @@ const PatterSearchPage = () => {
 				</select>
 				<div className={styles.horizontal}>
 					<label htmlFor="text1">Ciąg znaków:</label>
-					<input
-						type="text"
-						name="text1"
-						id="text1"
-						onChange={(e) => setText(e.target.value)}
-					/>
+					<input type="text" name="text1" id="text1" onChange={e => setText(e.target.value)} />
 					<label htmlFor="text2">Szukany wzorzec:</label>
-					<input
-						type="text"
-						name="text2"
-						id="text2"
-						onChange={(e) => setPattern(e.target.value)}
-					/>
+					<input type="text" name="text2" id="text2" onChange={e => setPattern(e.target.value)} />
 				</div>
 				<svg ref={svgRef}></svg>
 				<label className={styles.centered} htmlFor="steps">
@@ -221,10 +193,25 @@ const PatterSearchPage = () => {
 				<button onClick={handleAlgorithm}>Wykonaj algorytm</button>
 			</div>
 			<div className="stats">
-				<p>{"Znaleziono wzorzec w indeksach: " + statistics?.indexes}</p>
-				<p>{"Liczba przesunięć: " + statistics?.maxStep}</p>
-				<p>{"Liczba porównań: " + statistics?.comparisons}</p>
-				{statistics?.lastoccurence && <p>{statistics.lastoccurence}</p>}
+				<p>{statistics?.indexes ? "Znaleziono wzorzec w indeksach: " + statistics.indexes : ""}</p>
+				<p>{statistics?.maxStep ? "Liczba przesunięć: " + statistics.maxStep : ""}</p>
+				<p>{statistics?.comparisons ? "Liczba porównań: " + statistics.comparisons : ""}</p>
+				<p>{statistics?.hashComparisons ? "Liczba porównań wartości hash: " + statistics.hashComparisons : ""} </p>
+				{statistics?.lastoccurence ? (
+					<p>
+						Tablica ostatniego wystąpienia:
+						{[...statistics.lastoccurence.entries()]
+							.filter(([_key, value]) => value > -1)
+							.map(([key, value]) => (
+								<p>
+									{key} : {value}
+								</p>
+							))}
+					</p>
+				) : (
+					""
+				)}
+				<p>{statistics?.prefix ? "najdłuższy prefix:" + statistics.prefix : ""}</p>
 			</div>
 		</div>
 	);
