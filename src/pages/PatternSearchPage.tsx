@@ -21,7 +21,7 @@ const PatterSearchPage = () => {
 		const svg = d3.select(svgRef.current);
 		svg.selectAll("*").remove();
 
-		// rysowanie tekstu
+		// Rysowanie tekstu
 		svg
 			.append("text")
 			.attr("id", "string")
@@ -50,12 +50,11 @@ const PatterSearchPage = () => {
 			.attr("font-size", "24px");
 	}, [text, pattern, algorithm]);
 
-	// Aktualizacja przesunięcia i kolorowania wzorca
+	// Aktualizacja przesunięcia i kolorowanie wzorca
 	useEffect(() => {
 		const svg = d3.select(svgRef.current);
 		let shiftValue = 0;
 		if (step > 0) {
-			// Dla kroku 1 pobieramy element o indeksie 0, dla kroku 2 indeks 1, itd.
 			shiftValue = shifts.current[step - 1] ?? 0;
 			svg
 				.select("#pattern")
@@ -65,7 +64,6 @@ const PatterSearchPage = () => {
 				.attr("x", (_d, i) => 20 * i + 20 + 20 * shiftValue);
 			currentIndex.current = shiftValue;
 		} else {
-			// Początkowa pozycja wzorca
 			svg
 				.select("#pattern")
 				.selectAll("tspan")
@@ -73,7 +71,6 @@ const PatterSearchPage = () => {
 				.duration(500)
 				.attr("x", (_d, i) => 20 * i + 20);
 		}
-		// Przekazujemy wartość przesunięcia bezpośrednio do funkcji kolorowania
 		colorPattern(shiftValue);
 	}, [step]);
 
@@ -198,20 +195,30 @@ const PatterSearchPage = () => {
 				<p>{statistics?.comparisons ? "Liczba porównań: " + statistics.comparisons : ""}</p>
 				<p>{statistics?.hashComparisons ? "Liczba porównań wartości hash: " + statistics.hashComparisons : ""} </p>
 				{statistics?.lastoccurence ? (
-					<p>
+					<div>
 						Tablica ostatniego wystąpienia:
-						{[...statistics.lastoccurence.entries()]
-							.filter(([_key, value]) => value > -1)
-							.map(([key, value]) => (
-								<p>
-									{key} : {value}
+						<div className="flex">
+							{[...statistics.lastoccurence.entries()].map(([key, value]) => (
+								<p key={key}>
+									{key} : {value},
 								</p>
 							))}
-					</p>
+						</div>
+					</div>
 				) : (
 					""
 				)}
-				<p>{statistics?.prefix ? "najdłuższy prefix:" + statistics.prefix : ""}</p>
+				<div>
+					{statistics?.prefix ? (
+						<p>
+							{<p>tablica prefiksów: </p>} {<p className="mono">{"P[j]: " + pattern.split("").join(" ")}</p>} {<p className="mono">{"F(j): " + statistics.prefix}</p>}
+						</p>
+					) : (
+						""
+					)}
+				</div>
+				<p>{statistics?.textHashes ? "Hasz tekstu: " + statistics.textHashes[step] : ""}</p>
+				<p>{statistics?.textHashes ? "Hasz wzorca: " + statistics.patternHash : ""}</p>
 			</div>
 		</div>
 	);

@@ -38,3 +38,8 @@ svg {
     border: 2px black solid;
     background-color: white;
 }
+
+.mono {
+    font-family: monospace;
+    font-size: 1.25rem;
+}

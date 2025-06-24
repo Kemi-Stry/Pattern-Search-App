@@ -10,29 +10,37 @@ export type stats = {
 	prefix?: string;
 	//for rk
 	hashComparisons?: number;
+	textHashes?: number[];
+	patternHash?: number;
 };
 
-//Algorytm naiwny
 export function naive(text: string, pattern: string): stats {
+	let comparisons = 0;
 	let maxStep = 0;
-	let commparisons = 0;
 	const indexes: number[] = [];
 	const shifts: number[] = [];
+
 	for (let i = 0; i <= text.length - pattern.length; i++) {
-		commparisons++;
-		if (pattern === text.substring(i, i + pattern.length)) {
+		let match = true;
+		for (let j = 0; j < pattern.length; j++) {
+			comparisons++;
+			if (text[i + j] !== pattern[j]) {
+				match = false;
+				break;
+			}
+		}
+		if (match) {
 			indexes.push(i);
-			commparisons += pattern.length - 1;
 		}
 		maxStep++;
 		shifts.push(maxStep);
 	}
-	shifts.pop();
+
 	return {
-		maxStep: maxStep,
-		comparisons: commparisons,
-		indexes: indexes,
-		shifts: shifts,
+		maxStep,
+		comparisons,
+		indexes,
+		shifts,
 	};
 }
 
@@ -91,11 +99,7 @@ export function kmp(text: string, pattern: string): stats {
 		}
 	}
 
-	// Filtrujemy wartości `0` i mapujemy na rzeczywiste prefiksy wzorca
-	const prefixStr = pi
-		.map(val => (val > 0 ? pattern.slice(0, val) : ""))
-		.filter(s => s !== "")
-		.join(", ");
+	const prefixStr = pi.filter(s => s.toString() != "").join(" ");
 
 	return {
 		maxStep: maxStep,
@@ -106,13 +110,28 @@ export function kmp(text: string, pattern: string): stats {
 	};
 }
 
-// Algorytm Rabina-Karpa
-export function rk(text: string, pattern: string, base: number, divisor: number): stats {
+export function rk(
+	text: string,
+	pattern: string,
+	base: number,
+	divisor: number,
+): stats & {
+	textHashes: number[];
+	patternHash: number;
+} {
 	const n = text.length;
 	const m = pattern.length;
 
 	if (m > n) {
-		return { maxStep: 0, comparisons: 0, hashComparisons: 0, indexes: [], shifts: [] };
+		return {
+			maxStep: 0,
+			comparisons: 0,
+			hashComparisons: 0,
+			indexes: [],
+			shifts: [],
+			textHashes: [],
+			patternHash: 0,
+		};
 	}
 
 	let maxStep = 0;
@@ -120,6 +139,7 @@ export function rk(text: string, pattern: string, base: number, divisor: number)
 	let hashComparisons = 0;
 	const indexes: number[] = [];
 	const shifts: number[] = [];
+	const textHashes: number[] = [];
 
 	const h = Math.pow(base, m - 1) % divisor;
 	let patternHash = 0;
@@ -133,12 +153,11 @@ export function rk(text: string, pattern: string, base: number, divisor: number)
 
 	// Algorytm RK
 	for (let shift = 0; shift <= n - m; shift++) {
-		// Rejestrujemy krok wizualizacji
 		shifts.push(shift);
+		textHashes.push(textHash);
 		maxStep++;
-
-		// Porównanie wartości hash
 		hashComparisons++;
+
 		if (patternHash === textHash) {
 			let j = 0;
 			for (; j < m; j++) {
@@ -153,7 +172,6 @@ export function rk(text: string, pattern: string, base: number, divisor: number)
 			}
 		}
 
-		// Przesunięcie okna i ponowne obliczenie wartości hash
 		if (shift < n - m) {
 			textHash = (base * (textHash - text.charCodeAt(shift) * h) + text.charCodeAt(shift + m)) % divisor;
 			if (textHash < 0) {
@@ -165,16 +183,30 @@ export function rk(text: string, pattern: string, base: number, divisor: number)
 	shifts.shift();
 
 	return {
-		maxStep: maxStep,
-		comparisons: comparisons,
-		hashComparisons: hashComparisons, // Liczba porównań hash
-		indexes: indexes,
-		shifts: shifts,
+		maxStep,
+		comparisons,
+		hashComparisons,
+		indexes,
+		shifts,
+		textHashes,
+		patternHash,
 	};
 }
 
-function computeLastOccurence(pattern: string, alphabet: string): Map<string, number> {
+function computeLastOccurence(pattern: string, text: string): Map<string, number> {
 	const lastOccurence = new Map<string, number>();
+
+	const lettersOnly = text
+		.normalize("NFD")
+		.replace(/[^a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, "")
+		.toLowerCase()
+		.split("");
+
+	// Tworzymy zbiór unikalnych liter
+	const uniqueLetters = Array.from(new Set(lettersOnly));
+
+	// Sortujemy litery alfabetycznie
+	const alphabet = uniqueLetters.sort((a, b) => a.localeCompare(b));
 
 	for (const char of alphabet) {
 		lastOccurence.set(char, -1);
@@ -193,7 +225,7 @@ export function bm(text: string, pattern: string): stats {
 	let comparisons = 0; // Liczba wykonanych porównań
 	const indexes: number[] = []; // Indeksy pełnych dopasowań wzorca
 	const shifts: number[] = []; // Przesunięcia do wizualizacji
-	const lastOccurrence = computeLastOccurence(pattern, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	const lastOccurrence = computeLastOccurence(pattern, text);
 	let shift = 0;
 
 	while (shift <= text.length - pattern.length) {
